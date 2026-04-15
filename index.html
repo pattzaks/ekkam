@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ek Kam — Bas Gino</title>
+<meta name="description" content="Count your smokes. One less at a time.">
+<meta name="theme-color" content="#f5f0e8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #ffffff;
+    --surface2: #ede8df;
+    --border: #d4ccbc;
+    --green: #2d7a3a;
+    --green-light: #3a9648;
+    --green-muted: #c8e6cc;
+    --teal: #1a6b5e;
+    --teal-light: #22877a;
+    --text: #1a1a14;
+    --text-muted: #4a4a38;
+    --text-dim: #8a8a72;
+    --accent: #2d7a3a;
+    --accent-bg: #e8f5ea;
+    --warn: #b85c20;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  button { touch-action: manipulation; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    height: calc(var(--vh, 1vh) * 100); /* Chrome Android */
+    height: 100dvh;                      /* Chrome iOS + Safari (overrides if supported) */
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: -10%;
+    width: 70%;
+    height: 70%;
+    background: radial-gradient(ellipse, rgba(45,122,58,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -10%;
+    right: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse, rgba(26,107,94,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 420px;
+    margin: 0 auto;
+    height: calc(var(--vh, 1vh) * 100);
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; padding: 24px 20px 100px; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  .screen.active { display: block; height: 100%; box-sizing: border-box; }
+
+  /* ── HEADER ── */
+  .logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--green);
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+  }
+  .logo span { font-style: italic; color: var(--teal-light); font-weight: 700; }
+  .tagline { font-size: 12px; color: var(--text-dim); letter-spacing: 0.04em; }
+
+  /* ── ONBOARDING ── */
+  #screen-onboard { gap: 28px; }
+  .onboard-hero {
+    text-align: center;
+    padding: 20px 0;
+  }
+  .smoke-emoji { font-size: 52px; display: block; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .onboard-hero h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .onboard-hero h1 em { font-style: italic; color: var(--green); }
+  .onboard-hero p { font-size: 15px; color: var(--text-muted); line-height: 1.6; }
+
+  .username-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .username-card .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .username-display {
+    font-family: 'Instrument Serif', serif;
+    font-size: 26px;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+  .username-card .sub { font-size: 13px; color: var(--text-muted); }
+  .regen-btn {
+    background: none;
+    border: none;
+    color: var(--teal-light);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 0;
+    font-family: 'DM Sans', sans-serif;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .baseline-section { display: flex; flex-direction: column; gap: 12px; }
+  .baseline-section .label { font-size: 13px; color: var(--text-muted); }
+  .baseline-row { display: flex; gap: 10px; }
+  /* ── STEPPER (replaces plain number inputs) ── */
+  .stepper-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    width: 100%;
+  }
+  .stepper-row.compact {
+    width: auto;
+    display: inline-flex;
+    border-radius: var(--radius-sm);
+  }
+  .stepper-btn {
+    background: none;
+    border: none;
+    color: var(--green);
+    font-size: 26px;
+    font-weight: 300;
+    padding: 14px 22px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .stepper-btn:active { background: var(--green-muted); }
+  .stepper-val {
+    flex: 1;
+    text-align: center;
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px;
+    color: var(--text);
+    min-width: 60px;
+    user-select: none;
+  }
+  /* compact variant for price */
+  .stepper-row.compact .stepper-btn { font-size: 22px; padding: 10px 16px; }
+  .stepper-row.compact .stepper-val { font-size: 20px; min-width: 48px; }
+
+  .baseline-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 20px;
+    font-family: 'Instrument Serif', serif;
+    padding: 14px 16px;
+    text-align: center;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .baseline-input:focus { border-color: var(--green); }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--green) 0%, var(--teal) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px 24px;
+    font-size: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    padding: 12px 24px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* ── MAIN SCREEN ── */
+  #screen-main > * { margin-bottom: 20px; }
+  #screen-main > *:last-child { margin-bottom: 0; }
+  #screen-history > * { margin-bottom: 20px; }
+  #screen-history > *:last-child { margin-bottom: 0; }
+  #screen-about > * { margin-bottom: 0; }
+  #screen-onboard > * { margin-bottom: 28px; }
+  #screen-onboard > *:last-child { margin-bottom: 0; }
+
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-top: 8px;
+  }
+  .user-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .user-pill strong { color: var(--green); font-weight: 500; }
+  .nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 20px;
+    padding: 4px;
+  }
+
+  /* ── TODAY CARD ── */
+  .today-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+  .today-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--teal));
+  }
+  .today-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .today-count {
+    font-family: 'Instrument Serif', serif;
+    font-size: 72px;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 4px;
+    transition: transform 0.2s;
+  }
+  .today-count.bump { animation: bump 0.3s ease; }
+  @keyframes bump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  .today-unit { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+  .today-meta { display: flex; justify-content: center; gap: 20px; }
+  .meta-item { text-align: center; }
+  .meta-item .val { font-size: 16px; font-weight: 500; color: var(--green); }
+  .meta-item .key { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* ── MOOD ── */
+  .mood-section { display: flex; flex-direction: column; gap: 10px; }
+  .mood-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  .mood-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mood-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mood-chip:active, .mood-chip.selected {
+    background: var(--green-muted);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* ── SMOKE COUNTER ── */
+  .smoke-counter-section { display: flex; flex-direction: column; gap: 12px; }
+  .counter-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .qty-btn {
+    background: none;
+    border: none;
+    color: var(--green);
+    font-size: 24px;
+    padding: 18px 22px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .qty-btn:active { background: var(--green-muted); }
+  .qty-display {
+    flex: 1;
+    text-align: center;
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    color: var(--text);
+  }
+  .log-btn {
+    background: linear-gradient(135deg, var(--green) 0%, var(--teal) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .log-btn:active { transform: scale(0.97); }
+
+  .log-message {
+    text-align: center;
+    font-size: 14px;
+    color: var(--warn);
+    min-height: 20px;
+    font-style: italic;
+    transition: opacity 0.3s;
+  }
+
+  /* ── TIMELINE ── */
+  .timeline-section { display: flex; flex-direction: column; gap: 10px; }
+  .section-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  .timeline-dots {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    min-height: 52px;
+    border: 1px solid var(--surface2);
+  }
+  .smoke-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--green-muted);
+    border: 1.5px solid var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    animation: dotPop 0.3s ease;
+  }
+  @keyframes dotPop {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .smoke-dot:hover .dot-tooltip {
+    display: block;
+  }
+  .dot-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    z-index: 10;
+  }
+  .empty-timeline { font-size: 13px; color: var(--text-dim); font-style: italic; }
+
+  /* ── COMMUNITY ── */
+  .community-strip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .community-strip .left { font-size: 13px; color: var(--text-muted); }
+  .community-strip .left strong { color: var(--green); font-size: 18px; display: block; }
+  .community-strip .right { font-size: 11px; color: var(--text-dim); text-align: right; }
+
+  /* ── HISTORY SCREEN ── */
+  #screen-history { gap: 20px; }
+  .back-btn {
+    background: none;
+    border: none;
+    color: var(--teal-light);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    margin-bottom: 4px;
+  }
+
+  .tabs { display: flex; gap: 6px; }
+  .tab {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 10px;
+    cursor: pointer;
+    text-align: center;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .tab.active {
+    background: var(--green-muted);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .stat-cards { display: flex; gap: 10px; }
+  .stat-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 12px;
+    text-align: center;
+  }
+  .stat-card .val {
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px;
+    color: var(--green);
+    display: block;
+  }
+  .stat-card .key { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  .money-card {
+    background: linear-gradient(135deg, rgba(45,122,58,0.08), rgba(26,107,94,0.08));
+    border: 1px solid var(--green);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .money-card .money-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .money-card .money-amount {
+    font-family: 'Instrument Serif', serif;
+    font-size: 40px;
+    color: var(--green);
+  }
+  .money-card .money-sub { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-size: 12px; color: var(--text-dim); width: 32px; text-align: right; flex-shrink: 0; }
+  .bar-track {
+    flex: 1;
+    height: 28px;
+    background: var(--surface2);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--teal));
+    border-radius: 6px;
+    transition: width 0.6s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    min-width: 0;
+  }
+  .bar-fill .bar-val { font-size: 11px; color: rgba(255,255,255,0.8); }
+  .bar-fill.zero { display: none; }
+
+  .location-log { display: flex; flex-direction: column; gap: 8px; }
+  .location-entry {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--surface2);
+  }
+  .location-entry .loc-name { font-size: 13px; color: var(--text-muted); }
+  .location-entry .loc-count { font-size: 15px; color: var(--green); font-weight: 500; }
+  .location-entry .loc-time { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(140px);
+    opacity: 0;
+    background: var(--green);
+    border-radius: 24px;
+    padding: 12px 24px;
+    font-size: 14px;
+    color: #fff;
+    z-index: 200;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(45,122,58,0.3);
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ── PRICE SETTING ── */
+  .price-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+  }
+  .price-row label { font-size: 13px; color: var(--text-muted); flex: 1; }
+  .price-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 16px;
+    font-family: 'Instrument Serif', serif;
+    padding: 6px 12px;
+    width: 70px;
+    text-align: center;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .price-input:focus { border-color: var(--green); }
+
+  .divider { height: 1px; background: var(--surface2); margin: 4px 0; }
+
+  /* ── BASELINE INLINE BANNER ── */
+  .baseline-banner {
+    background: var(--surface);
+    border: 1px solid var(--teal);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .baseline-banner .bb-title { font-size: 13px; color: var(--teal-light); font-weight: 500; }
+  .baseline-banner .bb-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .baseline-banner-row { display: flex; gap: 10px; align-items: center; }
+  .bb-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 22px;
+    font-family: 'Instrument Serif', serif;
+    padding: 10px 14px;
+    text-align: center;
+    outline: none;
+    -webkit-appearance: none;
+    max-width: 90px;
+  }
+  .bb-input:focus { border-color: var(--teal); }
+  .bb-set-btn {
+    background: linear-gradient(135deg, var(--teal) 0%, var(--green) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .bb-skip { font-size: 12px; color: var(--text-dim); cursor: pointer; text-decoration: underline; text-align: right; }
+
+  /* ── SESSION GROUPS in timeline ── */
+  .session-group { display: flex; flex-direction: column; gap: 8px; }
+  .session-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .session-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--surface2);
+  }
+  .session-loc {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 2px 8px;
+    color: var(--teal-light);
+    font-size: 10px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .session-dots { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* ── SHARE SECTION ── */
+  .share-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .share-label {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .share-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .share-btn {
+    background: none;
+    border: 1px solid var(--teal);
+    border-radius: var(--radius-sm);
+    color: var(--teal-light);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+  .share-btn:active { background: var(--surface2); }
+  .share-copied {
+    font-size: 12px;
+    color: var(--green);
+    text-align: center;
+    display: none;
+  }
+  .share-copied.show { display: block; animation: fadeUp 0.3s ease; }
+
+  /* ── FOOTER ── */
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    padding: 8px 0 4px;
+  }
+  .footer-note span {
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  /* ── ABOUT SCREEN ── */
+  #screen-about { }
+
+  .about-hero {
+    padding: 28px 0 24px;
+    border-bottom: 1px solid var(--surface2);
+    margin-bottom: 28px;
+  }
+  .about-hero h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 30px;
+    line-height: 1.25;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .about-hero h2 em { font-style: italic; color: var(--green); }
+  .about-hero p {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .about-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+  .about-block-title {
+    font-size: 11px;
+    color: var(--teal-light);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+  }
+  .about-block p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.75;
+  }
+  .about-block p strong {
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .journey-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 10px 0 4px;
+  }
+  .journey-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--surface2);
+    position: relative;
+  }
+  .journey-step:last-child { border-bottom: none; }
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--green);
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-family: 'Instrument Serif', serif;
+  }
+  .step-content .step-title {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+    margin-bottom: 3px;
+  }
+  .step-content .step-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .about-quote {
+    background: var(--accent-bg);
+    border-left: 3px solid var(--teal);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 16px 18px;
+    margin: 4px 0 28px;
+  }
+  .about-quote p {
+    font-family: 'Instrument Serif', serif;
+    font-size: 18px;
+    font-style: italic;
+    color: var(--teal);
+    line-height: 1.5;
+  }
+  .about-quote span {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: block;
+    margin-top: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-style: normal;
+  }
+
+  .about-closer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .about-closer p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .about-closer p strong { color: var(--text); font-weight: 500; }
+
+  /* ── PRIVACY NOTICE ── */
+  .privacy-notice {
+    background: var(--surface);
+    border: 1px solid var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .privacy-notice .privacy-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .privacy-notice .privacy-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+  .privacy-notice .privacy-text strong {
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  /* ── VERSION TAG ── */
+  .version-tag {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-width: 420px;
+    margin: 0 auto;
+    background: var(--surface);
+    border-top: 2px solid var(--green-muted);
+    display: flex;
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  }
+  .bottom-nav-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    padding: 10px 4px 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bottom-nav-btn .nav-icon { font-size: 20px; line-height: 1; }
+  .bottom-nav-btn.active {
+    color: var(--green) !important;
+    font-weight: 600;
+    border-top: 3px solid var(--green);
+    padding-top: 7px; /* compensate for border */
+  }
+  .bottom-nav-btn:not(.active) {
+    border-top: 3px solid transparent;
+    padding-top: 7px;
+  }
+  .bottom-nav-btn:active { opacity: 0.6; }
+
+  /* Pad screens so content isn't hidden behind bottom nav */
+  /* padding-bottom handled in .screen base style (100px) */
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--surface2); }
+  ::-webkit-scrollbar-thumb { background: var(--green-muted); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ ONBOARDING ═══ -->
+  <div id="screen-onboard" class="screen">
+    <div style="margin-bottom: 8px;">
+      <div class="logo">Ek <span>कम</span></div>
+      <div class="tagline">बस <strong>Gino</strong></div>
+      <div class="version-tag">v0 — Early Access</div>
+    </div>
+
+    <div class="onboard-hero">
+      <span class="smoke-emoji">❄️</span>
+      <h1>Count it.<br><em>Change it.</em></h1>
+      <p>No pressure. No lectures.<br>Just awareness, one smoke at a time.</p>
+    </div>
+
+    <div class="username-card">
+      <div class="label">Your name in this journey</div>
+      <div class="username-display" id="username-display">—</div>
+      <div class="sub">Anonymous. Only you know this is you.</div>
+      <button class="regen-btn" onclick="regenUsername()">↺ Different name</button>
+    </div>
+
+    <div class="baseline-section">
+      <div class="label">Roughly how many cigarettes do you smoke a day?</div>
+      <div class="stepper-row" id="baseline-stepper">
+        <button class="stepper-btn" onclick="stepBaseline(-1)">−</button>
+        <div class="stepper-val" id="baseline-val">12</div>
+        <button class="stepper-btn" onclick="stepBaseline(1)">+</button>
+      </div>
+    </div>
+
+    <div class="privacy-notice">
+      <div class="privacy-icon">🔒</div>
+      <div class="privacy-text">
+        <strong>We do not collect any personal data.</strong> Everything you log stays in your browser's local storage — on your device only. You can erase all your data anytime by clearing this site's data in your browser settings.
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="completeOnboard()">Start Counting →</button>
+  </div>
+
+
+
+  <!-- ═══ MAIN ═══ -->
+  <div id="screen-main" class="screen">
+
+    <div class="top-bar">
+      <div>
+        <div class="logo">Ek <span>कम</span></div>
+        <div class="tagline">बस <strong>Gino</strong></div>
+        <div class="version-tag">v0</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div class="user-pill">👤 <strong id="main-username">—</strong></div>
+      </div>
+    </div>
+
+    <!-- Today count -->
+    <div class="today-card">
+      <div class="today-label">Today's smokes</div>
+      <div class="today-count" id="today-count" style="color:#1a1a14; font-size:72px;">0</div>
+      <div class="today-unit" style="color:#4a4a38;">cigarettes</div>
+      <div class="today-meta">
+        <div class="meta-item">
+          <div class="val" id="streak-val" style="color:#2d7a3a;">0</div>
+          <div class="key" style="color:#4a4a38;">day streak</div>
+        </div>
+        <div class="meta-item">
+          <div class="val" id="saved-today" style="color:#2d7a3a;">₹0</div>
+          <div class="key" style="color:#4a4a38;">saved today</div>
+        </div>
+        <div class="meta-item">
+          <div class="val" id="vs-baseline" style="color:#2d7a3a;">—</div>
+          <div class="key" style="color:#4a4a38;">vs usual</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline baseline banner (shown if today's pre-count not set) -->
+    <div id="baseline-banner" class="baseline-banner" style="display:none;">
+      <div>
+        <div class="bb-title">📋 Pehle se kitne piye aaj?</div>
+        <div class="bb-sub">Already smoked some before opening this? Log it to keep count accurate.</div>
+      </div>
+      <div class="baseline-banner-row">
+        <div class="stepper-row" id="bb-stepper">
+          <button class="stepper-btn" onclick="stepBB(-1)">−</button>
+          <div class="stepper-val" id="bb-val">0</div>
+          <button class="stepper-btn" onclick="stepBB(1)">+</button>
+        </div>
+        <button class="bb-set-btn" onclick="setMiddayBaseline()">Add to count</button>
+      </div>
+      <div class="bb-skip" onclick="dismissBaselineBanner()">I haven't smoked yet today</div>
+    </div>
+
+    <!-- Mood -->
+    <div class="mood-section">
+      <div class="mood-label">Why this one? (optional)</div>
+      <div class="mood-chips">
+        <div class="mood-chip" data-mood="stressed" onclick="selectMood(this)">😤 Stressed</div>
+        <div class="mood-chip" data-mood="bored" onclick="selectMood(this)">😐 Bored</div>
+        <div class="mood-chip" data-mood="habit" onclick="selectMood(this)">🔄 Habit</div>
+        <div class="mood-chip" data-mood="social" onclick="selectMood(this)">👥 Social</div>
+        <div class="mood-chip" data-mood="craving" onclick="selectMood(this)">🔥 Craving</div>
+      </div>
+    </div>
+
+    <!-- Smoke counter -->
+    <div class="smoke-counter-section">
+      <div class="counter-row">
+        <button class="qty-btn" onclick="changeQty(-1)">−</button>
+        <div class="qty-display" id="qty-display">1</div>
+        <button class="qty-btn" onclick="changeQty(1)">+</button>
+      </div>
+      <button class="log-btn" onclick="logSmoke()">
+        <span>🚬</span> <span id="log-btn-text">I just smoked</span>
+      </button>
+      <div class="log-message" id="log-message"></div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-section">
+      <div class="section-label">Today's log</div>
+      <div class="timeline-dots" id="timeline-dots">
+        <span class="empty-timeline">No smokes logged yet today.</span>
+      </div>
+    </div>
+
+    <!-- Share section -->
+    <div class="share-section">
+      <div class="share-label">Know someone who should track?</div>
+      <div class="share-sub">Share this anonymously. They start fresh, no data shared.</div>
+      <button class="share-btn" onclick="shareLink()">
+        <span>🔗</span> Share Ek Kam
+      </button>
+      <div class="share-copied" id="share-copied">Link copied to clipboard ✓</div>
+    </div>
+
+    <div class="footer-note">
+      ❄️ Created for the welfare of smokers around the world.<br>
+      <span>Started from Pune, India.</span><br>
+      <span class="version-tag" style="display:inline-block; margin-top:4px;">v0 — Early Access</span>
+    </div>
+
+  </div>
+
+  <!-- ═══ HISTORY ═══ -->
+  <div id="screen-history" class="screen">
+    <div style="padding-top: 8px; margin-bottom: 4px;">
+      <div class="logo">Ek <span>कम</span></div>
+      <div class="tagline">बस <strong>Gino</strong></div>
+      <div style="font-size:12px; color:var(--text-dim); margin-top:2px;">Your journey, <span id="hist-username" style="color:var(--green); font-weight:500;"></span></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('today', this)">Today</button>
+      <button class="tab" onclick="switchTab('week', this)">Week</button>
+      <button class="tab" onclick="switchTab('month', this)">Month</button>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stat-cards" id="stat-cards"></div>
+
+    <!-- Money saved -->
+    <div class="money-card">
+      <div class="money-label">Money saved (vs your usual)</div>
+      <div class="money-amount" id="money-saved-hist">₹0</div>
+      <div class="money-sub" id="money-sub-text">Keep going ✨</div>
+    </div>
+
+    <!-- Price setting -->
+    <div class="price-row">
+      <label>Price per cigarette (₹)</label>
+      <div class="stepper-row compact" id="price-stepper">
+        <button class="stepper-btn" onclick="stepPrice(-1)">−</button>
+        <div class="stepper-val" id="price-val">20</div>
+        <button class="stepper-btn" onclick="stepPrice(1)">+</button>
+      </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="section-label" id="bar-chart-label">This week</div>
+    <div class="bar-chart" id="bar-chart"></div>
+
+    <!-- Location log -->
+    <div class="section-label">Where you smoked</div>
+    <div class="location-log" id="location-log"></div>
+
+  </div>
+
+  <!-- ═══ ABOUT ═══ -->
+  <div id="screen-about" class="screen">
+    <div style="padding-top: 8px; margin-bottom: 0;">
+      <div class="logo">Ek <span>कम</span></div>
+      <div class="tagline">बस <strong>Gino</strong></div>
+      <div class="version-tag">v0 — Early Access</div>
+    </div>
+
+    <!-- Hero -->
+    <div class="about-hero">
+      <h2>A mirror,<br><em>not a coach.</em></h2>
+      <p>Ek <strong>कम</strong> doesn't lecture you. It doesn't show scary statistics or tell you what to do. It just holds up a number — and lets you decide what to do with it.</p>
+    </div>
+
+    <!-- Philosophy -->
+    <div class="about-block">
+      <div class="about-block-title">The Philosophy</div>
+      <p>Most quit-smoking apps try to <strong>push</strong> you. They guilt-trip, remind, and pressure. That approach fails for most people because it creates resistance.</p>
+      <p style="margin-top: 10px;">Ek <strong>कम</strong> works differently. The only thing it asks you to do is <strong>count</strong>. That's it. No commitment. No goal. No streak to protect. Just an honest number at the end of the day.</p>
+    </div>
+
+    <!-- Quote -->
+    <div class="about-quote">
+      <p>"What gets measured, gets managed — but only if you're the one measuring."</p>
+      <span>The act of counting creates awareness. Awareness creates choice.</span>
+    </div>
+
+    <!-- Why it works -->
+    <div class="about-block">
+      <div class="about-block-title">Why This Works</div>
+      <p>Smoking is largely <strong>unconscious</strong>. Most smokers don't know how many they've had by 3 PM. The moment you start counting — even without trying to cut down — the number itself starts to feel real. And real numbers create real reflection.</p>
+      <p style="margin-top: 10px;">Research on habit change consistently shows that <strong>self-monitoring alone</strong> reduces the behaviour being tracked. Not because of willpower — but because visibility interrupts autopilot.</p>
+    </div>
+
+    <!-- Journey steps -->
+    <div class="about-block">
+      <div class="about-block-title">The Journey</div>
+      <div class="journey-steps">
+        <div class="journey-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Log it</div>
+            <div class="step-desc">Scan the QR, tap the count. Takes 3 seconds. No account needed.</div>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Track it</div>
+            <div class="step-desc">See daily, weekly, monthly patterns. When do you smoke most? What triggers it?</div>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Be mindful</div>
+            <div class="step-desc">The number becomes visible. You start to notice the habit rather than just live inside it.</div>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Reduce — naturally</div>
+            <div class="step-desc">No one told you to. But somehow, ek kam ho jaata hai. One less, then two less.</div>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <div class="step-title">Quit — if and when you're ready</div>
+            <div class="step-desc">We're not asking you to quit today. We're just asking you to count today.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- No pressure closer -->
+    <div class="about-closer">
+      <p><strong>This is not a quit app.</strong></p>
+      <p>It's a counting app. You're in control. If you smoke 20 today and 19 tomorrow — that's one less. That's Ek <strong>कम</strong>.</p>
+      <p>No pressure. No judgment. Just you and an honest number.</p>
+    </div>
+
+    <!-- Origin -->
+    <div class="about-block">
+      <div class="about-block-title">Where This Started</div>
+      <p>This idea was tried personally — and it worked for a month. QR codes in smoking zones, a simple counter, nothing fancy. The tracking itself changed the relationship with the habit.</p>
+      <p style="margin-top: 10px;">That experiment became Ek <strong>कम</strong> — now shared freely, started from Pune, for anyone who wants to try.</p>
+    </div>
+
+    <!-- Privacy -->
+    <div class="about-block">
+      <div class="about-block-title">Your Data & Privacy</div>
+      <div class="privacy-notice">
+        <div class="privacy-icon">🔒</div>
+        <div class="privacy-text">
+          <strong>We do not store any data on any server.</strong> Everything you log — your smoke counts, moods, timestamps — lives entirely in your browser's local storage, on your device.<br><br>
+          We do not collect personal data. We don't know who you are.<br><br>
+          If you want to erase everything: go to your browser settings → Site Data → clear data for this site. It's gone completely.
+        </div>
+      </div>
+    </div>
+
+    <!-- Share from about page -->
+    <div class="share-section">
+      <div class="share-label">Know someone who should try this?</div>
+      <div class="share-sub">Share anonymously. They start fresh, no data shared between you.</div>
+      <button class="share-btn" onclick="shareLink()">
+        <span>🔗</span> Share Ek Kam
+      </button>
+      <div class="share-copied" id="share-copied-about">Link copied to clipboard ✓</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-note" style="margin-top: 8px;">
+      ❄️ Created for the welfare of smokers around the world.<br>
+      <span>Started from Pune, India.</span><br>
+      <span class="version-tag" style="display:inline-block; margin-top:6px;">v0 — Early Access</span>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav" id="bottom-nav" style="display:none;">
+  <button class="bottom-nav-btn active" id="nav-home" onclick="showMain()">
+    <span class="nav-icon">🚬</span>
+    <span>Zone</span>
+  </button>
+  <button class="bottom-nav-btn" id="nav-history" onclick="showHistory()">
+    <span class="nav-icon">📊</span>
+    <span>History</span>
+  </button>
+  <button class="bottom-nav-btn" id="nav-about" onclick="showAbout()">
+    <span class="nav-icon">💡</span>
+    <span>About</span>
+  </button>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// STORAGE KEYS
+// ═══════════════════════════════════════════
+const KEYS = {
+  username: 'ekam_username',
+  baseline: 'ekam_baseline_daily',
+  price: 'ekam_price_per_cig',
+  logs: 'ekam_smoke_logs',        // array of log entries
+  visits: 'ekam_visit_log',       // array of visit entries
+  onboarded: 'ekam_onboarded',
+  streak: 'ekam_streak',
+  streakLastDay: 'ekam_streak_last_day',
+  device: 'ekam_device_info',     // captured once at onboarding
+};
+
+// ═══════════════════════════════════════════
+// DATA STRUCTURES
+// ═══════════════════════════════════════════
+// Log entry:    { ts, date, count, mood, sessionId, location, source, locParam, note? }
+// Visit entry:  { ts, date, sessionId, location, source, locParam, isReturn, ua }
+// Device info:  { ts, os, browser, browserVersion, screen, language, timezone, touch, standalone }
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+const get = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+const set = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+// ═══════════════════════════════════════════
+// DEVICE INFO — captured once at onboarding
+// ═══════════════════════════════════════════
+function getDeviceInfo() {
+  const ua = navigator.userAgent;
+
+  // OS detection
+  let os = 'unknown';
+  if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+  else if (/Android/.test(ua)) os = 'Android';
+  else if (/Windows/.test(ua)) os = 'Windows';
+  else if (/Mac/.test(ua)) os = 'macOS';
+  else if (/Linux/.test(ua)) os = 'Linux';
+
+  // Browser detection — order matters (Chrome must come before Safari)
+  let browser = 'unknown';
+  let browserVersion = 'unknown';
+  if (/CriOS\/(\d+)/.test(ua)) {
+    browser = 'Chrome iOS';
+    browserVersion = ua.match(/CriOS\/(\d+)/)[1];
+  } else if (/Chrome\/(\d+)/.test(ua) && !/Chromium/.test(ua)) {
+    browser = 'Chrome';
+    browserVersion = ua.match(/Chrome\/(\d+)/)[1];
+  } else if (/FxiOS\/(\d+)/.test(ua)) {
+    browser = 'Firefox iOS';
+    browserVersion = ua.match(/FxiOS\/(\d+)/)[1];
+  } else if (/Firefox\/(\d+)/.test(ua)) {
+    browser = 'Firefox';
+    browserVersion = ua.match(/Firefox\/(\d+)/)[1];
+  } else if (/Safari\/(\d+)/.test(ua) && /Version\/(\d+)/.test(ua)) {
+    browser = 'Safari';
+    browserVersion = ua.match(/Version\/(\d+)/)[1];
+  } else if (/Edg\/(\d+)/.test(ua)) {
+    browser = 'Edge';
+    browserVersion = ua.match(/Edg\/(\d+)/)[1];
+  }
+
+  return {
+    ts: Date.now(),
+    os,
+    browser,
+    browserVersion,
+    screen: `${window.screen.width}x${window.screen.height}`,
+    pixelRatio: window.devicePixelRatio || 1,
+    language: navigator.language || 'unknown',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown',
+    touch: navigator.maxTouchPoints > 0,
+    standalone: window.navigator.standalone === true, // true if added to home screen
+    vh: window.innerHeight,                           // actual visible height at onboard time
+    vw: window.innerWidth,
+  };
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function timeStr(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function fmtDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function getUrlParam(k) {
+  return new URLSearchParams(window.location.search).get(k) || null;
+}
+
+function getSource() {
+  // Always read loc param first — works for QR, bookmarked URL, or shared link
+  const locParam = getUrlParam('loc');
+  const ref = document.referrer;
+  let sourceType = 'direct';
+  if (locParam) sourceType = 'qr';
+  else if (ref && ref !== '') sourceType = 'web';
+  // location is the ?loc= value if present, otherwise 'manual' (opened without param)
+  return { type: sourceType, location: locParam || 'manual' };
+}
+
+// ═══════════════════════════════════════════
+// USERNAME
+// ═══════════════════════════════════════════
+const ADJECTIVES = ['Blue','Green','Still','Calm','Fresh','Quiet','Wild','Clear','Bold','Wise','Free','Deep','Cool','Dawn','Mist','River','Stone','Bright','Swift','Steady','Warm','Sharp','Silent','Gentle','Brave','Noble','Vast','Pure','Light','Crisp'];
+const NOUNS = ['Sky','Wind','Tiger','Hawk','Wave','Pine','Oak','Rain','Path','Peak','Crow','Lotus','Reed','Mango','Dew','Sage','Moon','Flame','Storm','Cliff','Brook','Crane','Cedar','Birch','Ember','Ridge','Falcon','Heron','Drift','Shore'];
+
+function genUsername() {
+  const a = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const n = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  const num = Math.floor(Math.random() * 90) + 10;
+  return `${a}${n}-${num}`;
+}
+
+function regenUsername() {
+  const u = genUsername();
+  document.getElementById('username-display').textContent = u;
+  set(KEYS.username, u);
+}
+
+// ═══════════════════════════════════════════
+// SESSION ID — generated once per page load (for visit analytics)
+// GROUP ID — regenerates when gap since last log > 30 min (for timeline display)
+// ═══════════════════════════════════════════
+const SESSION_ID = `s_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+const SESSION_SRC = getSource();
+
+const GROUP_GAP_MS = 1 * 60 * 1000; // 30 minutes
+let currentGroupId = `g_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+
+function getOrRefreshGroupId() {
+  // Check last real log — if gap > 30 min, start a new group
+  const todayLogs = getTodayLogs().filter(l => l.note !== 'midday-baseline');
+  if (todayLogs.length > 0) {
+    const lastTs = todayLogs[todayLogs.length - 1].ts;
+    if (Date.now() - lastTs > GROUP_GAP_MS) {
+      // Gap too long — start fresh group
+      currentGroupId = `g_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    }
+  }
+  return currentGroupId;
+}
+
+// ═══════════════════════════════════════════
+// VISIT LOGGING
+// ═══════════════════════════════════════════
+function logVisit() {
+  const visits = get(KEYS.visits) || [];
+  const today = todayStr();
+  const isReturn = visits.some(v => v.date === today);
+  visits.push({
+    ts: Date.now(),
+    date: today,
+    sessionId: SESSION_ID,
+    location: SESSION_SRC.location,   // ?loc= value or 'manual'
+    source: SESSION_SRC.type,          // 'qr' | 'web' | 'direct'
+    locParam: getUrlParam('loc'),      // raw param for audit
+    isReturn,
+    ua: navigator.userAgent.substring(0, 80),
+  });
+  set(KEYS.visits, visits);
+}
+
+// ═══════════════════════════════════════════
+// STREAK
+// ═══════════════════════════════════════════
+function updateStreak() {
+  const today = todayStr();
+  const lastDay = get(KEYS.streakLastDay);
+  let streak = get(KEYS.streak) || 0;
+
+  if (lastDay === today) return streak;
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+
+  if (lastDay === yStr) {
+    streak += 1;
+  } else if (!lastDay) {
+    streak = 1;
+  } else {
+    streak = 1; // reset
+  }
+
+  set(KEYS.streak, streak);
+  set(KEYS.streakLastDay, today);
+  return streak;
+}
+
+function getStreak() {
+  return get(KEYS.streak) || 0;
+}
+
+// ═══════════════════════════════════════════
+// SMOKE LOG HELPERS
+// ═══════════════════════════════════════════
+function getLogs() { return get(KEYS.logs) || []; }
+
+function getTodayLogs() {
+  const today = todayStr();
+  return getLogs().filter(l => l.date === today);
+}
+
+function getTodayCount() {
+  return getTodayLogs().reduce((s, l) => s + (l.count || 0), 0);
+}
+
+function getWeekLogs() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+  }
+  const allLogs = getLogs();
+  return days.map(date => ({
+    date,
+    count: allLogs.filter(l => l.date === date).reduce((s, l) => s + (l.count || 0), 0)
+  }));
+}
+
+function getMonthLogs() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const allLogs = getLogs();
+  const days = {};
+  allLogs.forEach(l => {
+    const d = new Date(l.ts);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      days[l.date] = (days[l.date] || 0) + (l.count || 0);
+    }
+  });
+  return days;
+}
+
+// ═══════════════════════════════════════════
+// MONEY
+// ═══════════════════════════════════════════
+function getPrice() {
+  priceVal = parseFloat(get(KEYS.price)) || 20;
+  return priceVal;
+}
+
+function calcSaved(smokedCount, period = 'today') {
+  const baseline = get(KEYS.baseline) || 0;
+  const price = getPrice();
+  let baselineTotal = 0;
+  if (period === 'today') baselineTotal = baseline;
+  else if (period === 'week') baselineTotal = baseline * 7;
+  else if (period === 'month') baselineTotal = baseline * 30;
+  const diff = baselineTotal - smokedCount;
+  return diff > 0 ? Math.round(diff * price) : 0;
+}
+
+// ═══════════════════════════════════════════
+// MESSAGES
+// ═══════════════════════════════════════════
+function getLogMessage(sessionCount) {
+  // Counts only smokes logged in the current session (this page load)
+  if (sessionCount <= 1) return '';
+  if (sessionCount === 2) return 'Theek hai, hota hai.';
+  if (sessionCount === 3) return 'Teen ho gaye aaj...';
+  if (sessionCount === 4) return 'Chal, koi baat nahi.';
+  if (sessionCount >= 5 && sessionCount < 10) return 'Noting it down... but bass kar bhai 🙏';
+  if (sessionCount >= 10) return 'Bhai. 😶 Seriously.';
+  return '';
+}
+
+// ═══════════════════════════════════════════
+// STEPPER STATE
+// ═══════════════════════════════════════════
+let baselineVal = 12;
+let bbVal = 0;
+let priceVal = 20;
+
+function stepBaseline(delta) {
+  baselineVal = Math.max(0, Math.min(100, baselineVal + delta));
+  document.getElementById('baseline-val').textContent = baselineVal;
+}
+
+function stepBB(delta) {
+  bbVal = Math.max(0, Math.min(100, bbVal + delta));
+  document.getElementById('bb-val').textContent = bbVal;
+}
+
+function stepPrice(delta) {
+  priceVal = Math.max(1, Math.min(500, priceVal + delta));
+  document.getElementById('price-val').textContent = priceVal;
+  set(KEYS.price, priceVal);
+  renderHistory(currentTab);
+  renderMainStats();
+}
+let selectedMood = null;
+let qty = 1;
+
+function selectMood(el) {
+  document.querySelectorAll('.mood-chip').forEach(c => c.classList.remove('selected'));
+  if (selectedMood === el.dataset.mood) {
+    selectedMood = null;
+  } else {
+    el.classList.add('selected');
+    selectedMood = el.dataset.mood;
+  }
+}
+
+function changeQty(delta) {
+  qty = Math.max(1, Math.min(20, qty + delta));
+  document.getElementById('qty-display').textContent = qty;
+  const btn = document.getElementById('log-btn-text');
+  if (qty === 1) btn.textContent = 'I just smoked';
+  else btn.textContent = `Log ${qty} smokes`;
+}
+
+function logSmoke() {
+  const today = todayStr();
+  const logs = getLogs();
+  const groupId = getOrRefreshGroupId(); // may be new if gap > 30 min
+
+  logs.push({
+    ts: Date.now(),
+    date: today,
+    count: qty,
+    mood: selectedMood || null,
+    sessionId: SESSION_ID,             // page load identity — for analytics
+    groupId,                           // timeline grouping — resets after 30 min gap
+    location: SESSION_SRC.location,
+    source: SESSION_SRC.type,
+    locParam: getUrlParam('loc'),
+  });
+
+  set(KEYS.logs, logs);
+  updateStreak();
+
+  const totalToday = getTodayCount();
+  // Session count for message — only current group, excludes midday-baseline
+  const sessionCount = getLogs()
+    .filter(l => l.groupId === currentGroupId && l.note !== 'midday-baseline')
+    .reduce((s, l) => s + (l.count || 0), 0);
+  const msg = getLogMessage(sessionCount);
+
+  // Update UI
+  const countEl = document.getElementById('today-count');
+  countEl.textContent = totalToday;
+  countEl.classList.remove('bump');
+  void countEl.offsetWidth;
+  countEl.classList.add('bump');
+
+  document.getElementById('log-message').textContent = msg;
+  renderTimeline();
+  renderMainStats();
+
+  // Reset qty and mood
+  qty = 1;
+  document.getElementById('qty-display').textContent = 1;
+  document.getElementById('log-btn-text').textContent = 'I just smoked';
+  selectedMood = null;
+  document.querySelectorAll('.mood-chip').forEach(c => c.classList.remove('selected'));
+
+  showToast('Noted ❄️');
+  setTimeout(() => { document.getElementById('log-message').textContent = ''; }, 4000);
+}
+
+// ═══════════════════════════════════════════
+// TIMELINE — grouped by groupId (30 min gap = new group)
+// ═══════════════════════════════════════════
+function renderTimeline() {
+  const container = document.getElementById('timeline-dots');
+  const logs = getTodayLogs();
+
+  if (logs.length === 0) {
+    container.innerHTML = '<span class="empty-timeline">No smokes logged yet today.</span>';
+    return;
+  }
+
+  // Group by groupId (new field) — fall back to sessionId for old entries
+  const groupMap = {};
+  const groupOrder = [];
+  logs.forEach(l => {
+    const gid = l.groupId || l.sessionId || 'legacy';
+    if (!groupMap[gid]) {
+      groupMap[gid] = { logs: [], location: l.location, firstTs: l.ts };
+      groupOrder.push(gid);
+    }
+    groupMap[gid].logs.push(l);
+  });
+
+  const MOOD_EMOJI = { stressed:'😤', bored:'😐', habit:'🔄', social:'👥', craving:'🔥' };
+  let globalIdx = 1;
+  let html = '';
+
+  groupOrder.forEach((gid, gIdx) => {
+    const grp = groupMap[gid];
+    const loc = grp.location && grp.location !== 'manual' ? grp.location : null;
+    const groupTotal = grp.logs.reduce((s, l) => s + (l.count || 1), 0);
+    // Use minute-precision time of first log in this group
+    const groupLabel = `Session ${gIdx + 1} · ${timeStr(grp.firstTs)}`;
+
+    let dotsHtml = '';
+    grp.logs.forEach(l => {
+      for (let i = 0; i < (l.count || 1); i++) {
+        const tip = `#${globalIdx} · ${timeStr(l.ts)}${l.mood ? ' · ' + l.mood : ''}${loc ? ' · ' + loc : ''}`;
+        dotsHtml += `<div class="smoke-dot" title="${tip}">${globalIdx}<div class="dot-tooltip">${tip}</div></div>`;
+        globalIdx++;
+      }
+    });
+
+    html += `
+      <div class="session-group">
+        <div class="session-header">
+          ${groupLabel}
+          ${loc ? `<span class="session-loc">📍 ${loc}</span>` : ''}
+          <span style="color:var(--text-dim);font-size:10px;text-transform:none;">${groupTotal} 🚬</span>
+        </div>
+        <div class="session-dots">${dotsHtml}</div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// MAIN STATS
+// ═══════════════════════════════════════════
+function renderMainStats() {
+  const total = getTodayCount();
+  const baseline = get(KEYS.baseline) || 0;
+  const price = getPrice();
+  const streak = getStreak();
+
+  document.getElementById('today-count').textContent = total;
+  document.getElementById('streak-val').textContent = streak;
+  document.getElementById('saved-today').textContent = '₹' + calcSaved(total, 'today');
+
+  if (baseline > 0) {
+    const diff = total - baseline;
+    const vsEl = document.getElementById('vs-baseline');
+    if (diff < 0) { vsEl.textContent = diff; vsEl.style.color = 'var(--green)'; }
+    else if (diff === 0) { vsEl.textContent = '='; vsEl.style.color = 'var(--text-muted)'; }
+    else { vsEl.textContent = '+' + diff; vsEl.style.color = 'var(--warn)'; }
+  }
+
+  // Community counter moved to V1 (requires backend)
+}
+
+// ═══════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════
+let currentTab = 'today';
+
+function showAbout() { showScreen('screen-about'); }
+
+function showHistory() {
+  document.getElementById('hist-username').textContent = get(KEYS.username) || '—';
+  priceVal = parseFloat(get(KEYS.price)) || 20;
+  document.getElementById('price-val').textContent = priceVal;
+  renderHistory(currentTab);
+  showScreen('screen-history');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const tabMap = { today: 0, week: 1, month: 2 };
+  const tabs = document.querySelectorAll('.tab');
+  if (tabs[tabMap[currentTab]]) tabs[tabMap[currentTab]].classList.add('active');
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory(tab);
+}
+
+function renderHistory(tab) {
+  const baseline = get(KEYS.baseline) || 0;
+  const price = getPrice();
+
+  if (tab === 'today') {
+    const total = getTodayCount();
+    const logs = getTodayLogs();
+    const moods = {};
+    logs.forEach(l => { if (l.mood) moods[l.mood] = (moods[l.mood]||0) + l.count; });
+    const topMood = Object.entries(moods).sort((a,b) => b[1]-a[1])[0];
+
+    document.getElementById('stat-cards').innerHTML = `
+      <div class="stat-card"><span class="val">${total}</span><div class="key">smoked today</div></div>
+      <div class="stat-card"><span class="val">${Math.max(0, baseline - total)}</span><div class="key">below usual</div></div>
+      <div class="stat-card"><span class="val">${topMood ? topMood[0] : '—'}</span><div class="key">top mood</div></div>
+    `;
+
+    const saved = calcSaved(total, 'today');
+    document.getElementById('money-saved-hist').textContent = '₹' + saved;
+    document.getElementById('money-sub-text').textContent = saved > 0 ? `Saved vs your usual ${baseline}/day` : `Same as usual. Kal kum karo ❄️`;
+
+    // Today bar by hour
+    document.getElementById('bar-chart-label').textContent = 'Today by hour';
+    const hourly = {};
+    getTodayLogs().forEach(l => {
+      const h = new Date(l.ts).getHours();
+      hourly[h] = (hourly[h] || 0) + l.count;
+    });
+    const maxH = Math.max(...Object.values(hourly), 1);
+    let bars = '';
+    Object.entries(hourly).sort((a,b)=>a[0]-b[0]).forEach(([h, c]) => {
+      const pct = Math.round((c / maxH) * 100);
+      const label = h <= 11 ? h + 'am' : (h === 12 ? '12pm' : (h-12) + 'pm');
+      bars += `<div class="bar-row">
+        <div class="bar-label">${label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"><span class="bar-val">${c}</span></div></div>
+      </div>`;
+    });
+    document.getElementById('bar-chart').innerHTML = bars || '<div style="font-size:13px;color:var(--text-dim);font-style:italic;">No data yet today.</div>';
+
+  } else if (tab === 'week') {
+    const week = getWeekLogs();
+    const total = week.reduce((s, d) => s + d.count, 0);
+    const avg = Math.round(total / 7);
+    const best = Math.min(...week.map(d => d.count || Infinity));
+
+    document.getElementById('stat-cards').innerHTML = `
+      <div class="stat-card"><span class="val">${total}</span><div class="key">this week</div></div>
+      <div class="stat-card"><span class="val">${avg}</span><div class="key">daily avg</div></div>
+      <div class="stat-card"><span class="val">${best === Infinity ? '—' : best}</span><div class="key">best day</div></div>
+    `;
+
+    const saved = calcSaved(total, 'week');
+    document.getElementById('money-saved-hist').textContent = '₹' + saved;
+    document.getElementById('money-sub-text').textContent = saved > 0 ? `vs smoking ${baseline}/day every day` : 'Keep tracking ✨';
+
+    document.getElementById('bar-chart-label').textContent = 'This week';
+    const maxC = Math.max(...week.map(d => d.count), 1);
+    let bars = '';
+    week.forEach(d => {
+      const pct = Math.round((d.count / maxC) * 100);
+      const label = new Date(d.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short' });
+      bars += `<div class="bar-row">
+        <div class="bar-label">${label}</div>
+        <div class="bar-track"><div class="bar-fill ${d.count === 0 ? 'zero' : ''}" style="width:${pct}%"><span class="bar-val">${d.count || ''}</span></div></div>
+      </div>`;
+    });
+    document.getElementById('bar-chart').innerHTML = bars;
+
+  } else if (tab === 'month') {
+    const monthData = getMonthLogs();
+    const total = Object.values(monthData).reduce((s, c) => s + c, 0);
+    const days = Object.keys(monthData).length;
+    const avg = days > 0 ? Math.round(total / days) : 0;
+
+    document.getElementById('stat-cards').innerHTML = `
+      <div class="stat-card"><span class="val">${total}</span><div class="key">this month</div></div>
+      <div class="stat-card"><span class="val">${days}</span><div class="key">days tracked</div></div>
+      <div class="stat-card"><span class="val">${avg}</span><div class="key">daily avg</div></div>
+    `;
+
+    const saved = calcSaved(total, 'month');
+    document.getElementById('money-saved-hist').textContent = '₹' + saved;
+
+    // Projection: based on actual daily avg vs baseline, extrapolated to 30 days
+    // Only show if we have enough days to be meaningful
+    let subText = 'Start reducing to see savings ✨';
+    if (days > 0) {
+      const dailyAvg = total / days;                          // actual avg smoked per tracked day
+      const dailySaved = Math.max(0, baseline - dailyAvg);   // how many fewer per day vs baseline
+      const monthlyProjection = Math.round(dailySaved * 30 * price);
+      if (monthlyProjection > 0) {
+        subText = days < 5
+          ? `At this rate → ₹${monthlyProjection}/month saved (track more days for accuracy)`
+          : `At this rate → ₹${monthlyProjection}/month saved`;
+      } else {
+        subText = `Averaging ${Math.round(dailyAvg)}/day. Usual is ${baseline}. Kal kum karo ❄️`;
+      }
+    }
+    document.getElementById('money-sub-text').textContent = subText;
+
+    document.getElementById('bar-chart-label').textContent = 'Monthly trend';
+    const entries = Object.entries(monthData).sort((a,b)=>a[0].localeCompare(b[0]));
+    const maxC = Math.max(...entries.map(e => e[1]), 1);
+    let bars = '';
+    entries.slice(-10).forEach(([date, count]) => {
+      const pct = Math.round((count / maxC) * 100);
+      const label = new Date(date + 'T00:00:00').getDate();
+      bars += `<div class="bar-row">
+        <div class="bar-label">${label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"><span class="bar-val">${count}</span></div></div>
+      </div>`;
+    });
+    document.getElementById('bar-chart').innerHTML = bars || '<div style="font-size:13px;color:var(--text-dim);font-style:italic;">Track more days to see trend.</div>';
+  }
+
+  // Location log
+  renderLocationLog();
+}
+
+function renderLocationLog() {
+  const logs = getLogs();
+  const locMap = {};
+  logs.forEach(l => {
+    const loc = l.location || 'unknown';
+    if (!locMap[loc]) locMap[loc] = { count: 0, lastTs: 0 };
+    locMap[loc].count += l.count || 1;
+    if (l.ts > locMap[loc].lastTs) locMap[loc].lastTs = l.ts;
+  });
+
+  const container = document.getElementById('location-log');
+  const entries = Object.entries(locMap).sort((a,b)=>b[1].count-a[1].count);
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--text-dim);font-style:italic;">No location data yet.</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(([loc, data]) => {
+    let locLabel = loc;
+    if (loc === 'manual') locLabel = 'Opened directly (no QR)';
+    else if (loc === 'unknown') locLabel = 'Unknown';
+    return `
+    <div class="location-entry">
+      <div>
+        <div class="loc-name">📍 ${locLabel}</div>
+        <div class="loc-time">Last: ${timeStr(data.lastTs)}</div>
+      </div>
+      <div class="loc-count">${data.count} 🚬</div>
+    </div>`;
+  }).join('');
+}
+
+
+// ═══════════════════════════════════════════
+// SCREEN ROUTING
+// ═══════════════════════════════════════════
+const NAV_MAP = {
+  'screen-main': 'nav-home',
+  'screen-history': 'nav-history',
+  'screen-about': 'nav-about',
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  // Scroll the screen element itself to top (scroll is now on .screen, not window)
+  el.scrollTop = 0;
+  // Hide bottom nav on onboarding, show on all other screens
+  const nav = document.getElementById('bottom-nav');
+  if (id === 'screen-onboard') {
+    nav.style.display = 'none';
+  } else {
+    nav.style.display = 'flex';
+  }
+  // Update active nav tab
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  const activeNav = NAV_MAP[id];
+  if (activeNav) document.getElementById(activeNav).classList.add('active');
+}
+
+function showMain() {
+  showScreen('screen-main');
+  renderMainStats();
+  renderTimeline();
+  checkBaselineBanner();
+}
+
+
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.classList.remove('show');
+    toastTimer = null;
+  }, 3000);
+}
+
+// ═══════════════════════════════════════════
+// BASELINE BANNER (inline on main screen)
+// ═══════════════════════════════════════════
+function checkBaselineBanner() {
+  // Show banner if: today has no logs yet AND it's not a fresh onboard
+  const todayLogs = getTodayLogs();
+  const banner = document.getElementById('baseline-banner');
+  if (todayLogs.length === 0 && get(KEYS.onboarded)) {
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function setMiddayBaseline() {
+  if (bbVal > 0) {
+    const today = todayStr();
+    const logs = getLogs();
+    logs.push({
+      ts: Date.now(),
+      date: today,
+      count: bbVal,
+      mood: null,
+      sessionId: SESSION_ID,
+      location: SESSION_SRC.location,
+      source: SESSION_SRC.type,
+      locParam: getUrlParam('loc'),
+      note: 'midday-baseline',
+    });
+    set(KEYS.logs, logs);
+    showToast(`${bbVal} smokes added to today's count`);
+  }
+  bbVal = 0;
+  document.getElementById('bb-val').textContent = 0;
+  dismissBaselineBanner();
+}
+
+function dismissBaselineBanner() {
+  document.getElementById('baseline-banner').style.display = 'none';
+  renderTimeline();
+  renderMainStats();
+}
+
+// ═══════════════════════════════════════════
+// ONBOARDING
+// ═══════════════════════════════════════════
+function completeOnboard() {
+  const username = get(KEYS.username) || genUsername();
+  set(KEYS.username, username);
+  set(KEYS.baseline, baselineVal);
+  set(KEYS.onboarded, true);
+  set(KEYS.device, getDeviceInfo()); // captured once, never updated
+  updateStreak();
+  document.getElementById('main-username').textContent = username;
+  showMain();
+}
+
+// ═══════════════════════════════════════════
+// SHARE
+// ═══════════════════════════════════════════
+function shareLink() {
+  const baseUrl = window.location.origin + window.location.pathname;
+  const shareText = 'Track your smokes, one at a time. No account needed. — Ek Kam';
+
+  if (navigator.share) {
+    navigator.share({ title: 'Ek Kam — Bas Gino', text: shareText, url: baseUrl })
+      .catch(() => {});
+  } else {
+    navigator.clipboard.writeText(baseUrl).then(() => {
+      // Show whichever copied element is visible on current screen
+      const ids = ['share-copied', 'share-copied-about'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2500); }
+      });
+    }).catch(() => {
+      window.prompt('Copy this link:', baseUrl);
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+// VIEWPORT HEIGHT FIX (Chrome Android)
+// ═══════════════════════════════════════════
+function setVH() {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+setVH();
+window.addEventListener('resize', setVH);
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function init() {
+  logVisit();
+
+  const onboarded = get(KEYS.onboarded);
+  if (!onboarded) {
+    const u = genUsername();
+    set(KEYS.username, u);
+    document.getElementById('username-display').textContent = u;
+    showScreen('screen-onboard');
+    return;
+  }
+
+  // Returning user — go straight to Zone
+  const username = get(KEYS.username) || '—';
+  document.getElementById('main-username').textContent = username;
+  updateStreak();
+  showMain(); // banner logic runs inside showMain
+}
+
+// Run after DOM is fully parsed
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
