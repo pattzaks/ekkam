@@ -934,6 +934,60 @@
   /* Pad screens so content isn't hidden behind bottom nav */
   /* padding-bottom handled in .screen base style (100px) */
 
+  /* ── VOLUNTEER SCREEN ── */
+  .vol-hero { text-align: center; padding: 20px 0 8px; }
+  .vol-hero h2 { font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.25; margin-bottom: 10px; }
+  .vol-hero h2 em { font-style: italic; color: var(--teal-light); }
+  .vol-hero p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+  .vol-block { background: var(--surface); border-radius: var(--radius); padding: 18px; margin-top: 16px; }
+  .vol-block-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+  .vol-steps { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .vol-steps li { font-size: 14px; color: var(--text-muted); padding-left: 22px; position: relative; line-height: 1.55; }
+  .vol-steps li::before { content: '→'; position: absolute; left: 0; color: var(--green); font-weight: 600; }
+
+  .city-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .city-chip {
+    background: var(--accent-bg);
+    border: 1px solid var(--green-muted);
+    color: var(--green);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .city-chip:active { background: var(--green-muted); transform: scale(0.96); }
+
+  .vol-cta-label { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; }
+
+  .ig-follow-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
+    color: #fff; border: none; border-radius: var(--radius-sm);
+    padding: 14px 20px; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 500; width: 100%; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; margin-top: 4px;
+  }
+  .ig-follow-btn:active { opacity: 0.85; }
+
+  .vol-quote {
+    background: var(--accent-bg); border-left: 3px solid var(--green);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 14px 16px; margin-top: 16px;
+    font-size: 14px; color: var(--text-muted); font-style: italic; line-height: 1.6;
+  }
+
+  .ig-strip {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 16px; margin-top: 16px;
+    background: linear-gradient(135deg, rgba(245,133,41,0.08), rgba(129,52,175,0.08));
+    border-radius: var(--radius-sm); border: 1px solid rgba(221,42,123,0.2);
+    text-decoration: none; color: #c2185b; font-size: 13px; font-weight: 500;
+  }
+
   /* scrollbar */
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--surface2); }
@@ -1246,11 +1300,58 @@
       <div class="share-copied" id="share-copied-about">Link copied to clipboard ✓</div>
     </div>
 
+    <!-- Instagram -->
+    <a href="https://www.instagram.com/ek.kam.movement" target="_blank" rel="noopener" class="ig-strip">
+      <span>📸</span> Connect &amp; follow: <strong>@ek.kam.movement</strong>
+    </a>
+
     <!-- Footer -->
     <div class="footer-note" style="margin-top: 8px;">
       ❄️ Created for the welfare of smokers around the world.<br>
       <span>Started from Pune, India.</span><br>
       <span class="version-tag" style="display:inline-block; margin-top:6px;">v0 — Early Access</span>
+    </div>
+
+  </div>
+
+  <!-- ═══ VOLUNTEER ═══ -->
+  <div id="screen-volunteer" class="screen">
+    <div style="padding-top: 8px; margin-bottom: 0;">
+      <div class="logo">Ek <span>कम</span></div>
+      <div class="tagline">बस <strong>Gino</strong></div>
+    </div>
+
+    <div class="vol-hero">
+      <h2>Spread the word.<br><em>Ek city at a time.</em></h2>
+      <p>Ek कम started in one office in Pune. It grew because one person told another. That's how movements work — not campaigns, just people.</p>
+    </div>
+
+    <div class="vol-quote">
+      "You smoke. You work. You know 10 people who light up at the chai break. That's where Ek कम needs you — not as a counselor, just as someone who says: <em>yaar, try this app.</em>"
+    </div>
+
+    <div class="vol-block">
+      <div class="vol-block-title">What volunteering looks like</div>
+      <ul class="vol-steps">
+        <li>Print a QR code and put it in your office smoking zone</li>
+        <li>Tell 3 colleagues about the app this week</li>
+        <li>Share it once on your Instagram or WhatsApp status</li>
+        <li>No events. No money. No experience needed.</li>
+      </ul>
+    </div>
+
+    <div class="vol-block">
+      <div class="vol-block-title">Pick your city — DM us to get started</div>
+      <p class="vol-cta-label">We'll send you a free printable QR kit. You do the rest.</p>
+      <div class="city-grid" id="city-grid"></div>
+    </div>
+
+    <div class="vol-block">
+      <div class="vol-block-title">Follow & connect on Instagram</div>
+      <p class="vol-cta-label">Updates, city rollouts, and volunteer stories — all there.</p>
+      <button class="ig-follow-btn" onclick="window.open('https://www.instagram.com/ek.kam.movement','_blank')">
+        <span>📸</span> @ek.kam.movement — Follow &amp; DM us
+      </button>
     </div>
 
   </div>
@@ -1270,6 +1371,10 @@
   <button class="bottom-nav-btn" id="nav-about" onclick="showAbout()">
     <span class="nav-icon">💡</span>
     <span>About</span>
+  </button>
+  <button class="bottom-nav-btn" id="nav-volunteer" onclick="showVolunteer()">
+    <span class="nav-icon">🤝</span>
+    <span>Join</span>
   </button>
 </nav>
 
@@ -1920,7 +2025,31 @@ const NAV_MAP = {
   'screen-main': 'nav-home',
   'screen-history': 'nav-history',
   'screen-about': 'nav-about',
+  'screen-volunteer': 'nav-volunteer',
 };
+
+const CITIES = [
+  'Bengaluru','Hyderabad','Pune','Chennai','Mumbai','Delhi NCR',
+  'Kolkata','Ahmedabad','Kochi','Chandigarh','Coimbatore','Vizag',
+  'Jaipur','Surat','Indore','Nagpur','Bhopal','Lucknow','Vadodara','Mysuru'
+];
+
+function renderCities() {
+  const grid = document.getElementById('city-grid');
+  if (grid.children.length) return;
+  CITIES.forEach(city => {
+    const btn = document.createElement('button');
+    btn.className = 'city-chip';
+    btn.textContent = city;
+    btn.onclick = () => window.open('https://ig.me/m/ek.kam.movement', '_blank');
+    grid.appendChild(btn);
+  });
+}
+
+function showVolunteer() {
+  showScreen('screen-volunteer');
+  renderCities();
+}
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
