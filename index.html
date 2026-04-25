@@ -1507,9 +1507,12 @@ function genUsername() {
 }
 
 function regenUsername() {
+  const old = get(KEYS.username);
   const u = genUsername();
   document.getElementById('username-display').textContent = u;
   set(KEYS.username, u);
+  pushEvent('username_regen', JSON.stringify({ old, new: u }));
+  syncToServer();
 }
 
 // ═══════════════════════════════════════════
@@ -1685,6 +1688,8 @@ function stepPrice(delta) {
   set(KEYS.price, priceVal);
   renderHistory(currentTab);
   renderMainStats();
+  pushEvent('price_set', priceVal);
+  syncToServer();
 }
 let selectedMood = null;
 let qty = 1;
@@ -1713,6 +1718,7 @@ function logSmoke() {
   const groupId = getOrRefreshGroupId(); // may be new if gap > 30 min
 
   logs.push({
+    id: `l_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
     ts: Date.now(),
     date: today,
     count: qty,
@@ -1754,6 +1760,7 @@ function logSmoke() {
 
   showToast('Noted ❄️');
   setTimeout(() => { document.getElementById('log-message').textContent = ''; }, 4000);
+  syncToServer();
 }
 
 // ═══════════════════════════════════════════
@@ -2109,6 +2116,7 @@ function setMiddayBaseline() {
     const today = todayStr();
     const logs = getLogs();
     logs.push({
+      id: `l_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
       ts: Date.now(),
       date: today,
       count: bbVal,
@@ -2121,6 +2129,8 @@ function setMiddayBaseline() {
     });
     set(KEYS.logs, logs);
     showToast(`${bbVal} smokes added to today's count`);
+    pushEvent('baseline_banner_accepted', bbVal);
+    syncToServer();
   }
   bbVal = 0;
   document.getElementById('bb-val').textContent = 0;
@@ -2144,6 +2154,8 @@ function completeOnboard() {
   set(KEYS.device, getDeviceInfo()); // captured once, never updated
   updateStreak();
   document.getElementById('main-username').textContent = username;
+  pushEvent('baseline_set', baselineVal);
+  syncToServer();
   showMain();
 }
 
@@ -2172,6 +2184,74 @@ function shareLink() {
 }
 
 // ═══════════════════════════════════════════
+// SERVER SYNC
+// ═══════════════════════════════════════════
+const SYNC_KEY_TS     = 'ekam_last_sync_ts';
+const SYNC_KEY_EVENTS = 'ekam_pending_events';
+
+function pushEvent(type, value) {
+  const pending = get(SYNC_KEY_EVENTS) || [];
+  pending.push({
+    id:  `e_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+    type,
+    ts:  Date.now(),
+    value: value != null ? String(value) : null,
+    s:   SESSION_ID,
+    src: SESSION_SRC.type,
+    loc: getUrlParam('loc') || null,
+  });
+  set(SYNC_KEY_EVENTS, pending);
+}
+
+function syncToServer() {
+  const username = get(KEYS.username);
+  if (!username) return;
+
+  const lastSync   = parseInt(get(SYNC_KEY_TS) || '0');
+  const allLogs    = getLogs();
+  // First ever sync sends full history; subsequent syncs send only new logs
+  const logsToSend = lastSync === 0
+    ? allLogs
+    : allLogs.filter(l => l.ts >= lastSync - 5000);
+
+  const pendingEvents = get(SYNC_KEY_EVENTS) || [];
+
+  if (logsToSend.length === 0 && pendingEvents.length === 0) return;
+
+  const payload = {
+    u:        username,
+    baseline: parseInt(get(KEYS.baseline)) || null,
+    price:    parseFloat(get(KEYS.price))  || null,
+    device:   get(KEYS.device)             || null,
+    logs: logsToSend.map(l => ({
+      id:   l.id || `l_${l.ts}_${username.slice(0,4)}`,
+      ts:   l.ts,
+      mood: l.mood  || null,
+      qty:  l.count || 1,
+      g:    l.groupId   || null,
+      s:    l.sessionId || null,
+      src:  l.source    || null,
+      loc:  l.locParam  || null,
+    })),
+    events: pendingEvents,
+  };
+
+  fetch('/api/sync', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      set(SYNC_KEY_TS, Date.now());
+      set(SYNC_KEY_EVENTS, []);
+    }
+  })
+  .catch(() => {}); // silent — app works fully offline
+}
+
+// ═══════════════════════════════════════════
 // VIEWPORT HEIGHT FIX (Chrome Android)
 // ═══════════════════════════════════════════
 function setVH() {
@@ -2186,12 +2266,15 @@ window.addEventListener('resize', setVH);
 // ═══════════════════════════════════════════
 function init() {
   logVisit();
+  pushEvent('visit');
 
   const onboarded = get(KEYS.onboarded);
   if (!onboarded) {
     const u = genUsername();
     set(KEYS.username, u);
     document.getElementById('username-display').textContent = u;
+    pushEvent('username_created', u);
+    syncToServer();
     showScreen('screen-onboard');
     return;
   }
@@ -2200,6 +2283,7 @@ function init() {
   const username = get(KEYS.username) || '—';
   document.getElementById('main-username').textContent = username;
   updateStreak();
+  syncToServer(); // syncs history + any pending events from previous sessions
   showMain(); // banner logic runs inside showMain
 }
 
